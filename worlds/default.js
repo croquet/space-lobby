@@ -9,7 +9,7 @@ export function init(Constants) {
 
     Constants.UserBehaviorDirectory = "behaviors/default";
     Constants.UserBehaviorModules = [
-        "lights.js", "joeTheBox.js", "simpleSpin.js","door.js", "bloompass.js","tutorial.js", "glowingText.js", "worldRevolve.js"//"buttonLight.js", //,"openPortal.js"
+        "lights.js", "audio.js", "simpleSpin.js","door.js", "bloompass.js","tutorial.js", "glowingText.js", "worldRevolve.js"//"buttonLight.js", //,"openPortal.js"
     ];
     Constants.UseRapier = true;
 
@@ -21,9 +21,9 @@ export function init(Constants) {
                 name:"world model",
                 type: "3d",
                 dataLocation: "./assets/3D/SciFi_4.zip",
-                dataScale:[2,2,2],
+                dataScale:[2,2,2], //[2,2,2]
                 //singleSided: true,
-                behaviorModules:["BloomPass","WorldPawn"],
+                behaviorModules:["WorldPawn"],//["BloomPass","WorldPawn"],
                 shadow: true,
                 layers: ["walk"],
                 translation:[0, 0, 0],
@@ -45,6 +45,35 @@ export function init(Constants) {
                 dataType: "exr",
             }
         },
+        // {
+        //     card: {
+        //         name: "image card",
+        //         translation: [0, 0.4, -12],
+        //         //rotation: [0, Math.PI / 2, 0],
+        //         scale: [4, 4, 4],
+        //         type: "2d",
+        //         textureType: "image",
+        //         textureLocation: "./assets/images/CroquetLogo_RGB.jpg",
+        //         fullBright: true,
+        //         frameColor: 0xcccccc,
+        //         color: 0xbbbbbb,
+        //         cornerRadius: 0.05,
+        //         depth: 0.05,
+        //         shadow: true,
+        //     }
+        // },
+        // {
+        //     card: {
+        //         name:"dog",
+        //         type: "3d",
+        //         dataLocation: "./assets/3D/shiba.zip",
+        //         //fileName: "/testcube_1m.glb.zip",
+        //         layers: ["pointer"],
+        //         translation:[0, 0.4, 10],
+        //         dataScale:[1,1,1],
+        //         shadow: true,
+        //     }
+        // },
         {
             card: {
                 name:"button",
@@ -73,11 +102,41 @@ export function init(Constants) {
                 shadow: true,
             }
         },
+        // {
+        //     card: {
+        //         name:"panel light2",
+        //         type: "3d",
+        //         dataLocation: "./assets/3D/SciFi_rightpanellight.zip",
+        //         //fileName: "/testcube_1m.glb.zip",
+        //         behaviorModules: ["ButtonLight"],
+        //         myScope:"right_panel",
+        //         layers: ["pointer"],
+        //         translation:[0, 0, 0],
+        //         dataScale:[2,2,2],
+        //         shadow: true,
+        //     }
+        // },
+        // {
+        //     card: {
+        //         name:"panel light",
+        //         type: "3d",
+        //         dataLocation: "./assets/3D/SciFi_leftpanellight.zip",
+        //         //fileName: "/testcube_1m.glb.zip",
+        //         layers: ["pointer"],
+        //         behaviorModules: ["ButtonLight"],
+        //         myScope:"left_panel",
+        //         translation:[0, 0, 0],
+        //         dataScale:[2,2,2],
+        //         shadow: true,
+        //     }
+        // },
         {
             card: {
-                name:"background-station",
+                name:"planet",
                 type: "3d",
                 dataLocation: "./assets/3D/space_station.zip",
+                //fileName: "/testcube_1m.glb.zip",
+                behaviorModules: ["audio"],
                 layers: ["pointer"],
                 translation:[500, 5, -500],
                 dataScale:[4,4,4],

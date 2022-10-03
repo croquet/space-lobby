@@ -18,15 +18,16 @@ class TextActor {
                 scale: [2, 2, 2],
                 rotation: [0, 0, 0, 1],
                 layers: ["pointer"],
-                name: "/Group 192.png",
+                name: "QR-Holo",
                 cornerRadius: 0.02,
-                fileName: "/Group 192.png",
+                behaviorModules: ["QRCode"],
                 fullBright: false,
-                modelType: "img",
                 shadow: true,
                 singleSided: true,
-                textureLocation: "3dbVMCMeVHmQoRX1BH8uxp6cCh6izEk_v5CbIrHYOLdIDBAQFBdeS0sCDQgBF0oRF0oHFgsVEQEQSg0LSxFLHjEQEzQrHiIRKzdVLw0DKT4NUVddHCIgI1xUVksNC0oHFgsVEQEQSgkNBxYLEgEWFwFKCAsHBQgAARIAAQIFEQgQSwo1JSMUBiAsKAIUVihJFTEuD1wWKTUFVAohHAlRFjsjAgwOMC8AJi8JPDFLAAUQBUtQIg5dHBU9NChSCjwGKVYMDRMuCyMXMB0vEhxWDz4RVRwLMgMAIgFSPhAX",
-                textureType: "image",
+                //textureLocation: "3dbVMCMeVHmQoRX1BH8uxp6cCh6izEk_v5CbIrHYOLdIDBAQFBdeS0sCDQgBF0oRF0oHFgsVEQEQSg0LSxFLHjEQEzQrHiIRKzdVLw0DKT4NUVddHCIgI1xUVksNC0oHFgsVEQEQSgkNBxYLEgEWFwFKCAsHBQgAARIAAQIFEQgQSwo1JSMUBiAsKAIUVihJFTEuD1wWKTUFVAohHAlRFjsjAgwOMC8AJi8JPDFLAAUQBUtQIg5dHBU9NChSCjwGKVYMDRMuCyMXMB0vEhxWDz4RVRwLMgMAIgFSPhAX",
+                textureType: "canvas",
+                textureHeight: 280,
+                textureWidth: 280,
                 type: "2d",
             });
         }
@@ -120,12 +121,36 @@ class TextPawn {
 
 }
 
+class QRCodePawn {
+    setup() {
+        this.removeEventListener("pointerDoubleDown", "onPointerDoubleDown");
+        this.addEventListener("pointerDoubleDown", "nop");
+        //debugger;
+        let canvas = Microverse.App.makeQRCanvas({colorDark: "#000000", colorLight: "#FFFFFF", height: 256, width: 256});
+        let ctx = this.canvas.getContext("2d");
+        ctx.fillStyle = "white";
+        ctx.fillRect(0,0,280,280);
+        ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 12, 12, 256, 256); // drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+        this.texture.needsUpdate = true
+        this.shape.traverse((mesh) => {
+            if (mesh.material) {
+                mesh.material.transparent = true;
+                mesh.material.opacity = 0.3;
+            }
+        });
+    }
+}
+
 export default {
     modules: [
         {
             name: "GlowText",
             actorBehaviors: [TextActor],
             pawnBehaviors: [TextPawn]
+        },
+        {
+            name: "QRCode",
+            pawnBehaviors: [QRCodePawn],
         }
     ]
 }
