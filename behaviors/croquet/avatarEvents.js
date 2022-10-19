@@ -1,7 +1,7 @@
 class AvatarPawn {
     setup() {
         if (!this.isMyPlayerPawn) {return;}
-        Microverse.sendToShell("hud", {joystick: false});
+        //Microverse.sendToShell("hud", {joystick: false});
         this.lookTo(-0.3, 0, [0, 0, 0]);
 
         this.addFirstResponder("pointerTap", {ctrlKey: true, altKey: true}, this);

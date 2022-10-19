@@ -23,7 +23,7 @@ export function init(Constants) {
                 dataLocation: "./assets/3D/SciFi_4.zip",
                 dataScale:[2,2,2], //[2,2,2]
                 //singleSided: true,
-                behaviorModules:["WorldPawn"],//["BloomPass","WorldPawn"],
+                behaviorModules:["WorldPawn", "FooMenu"],//["BloomPass","WorldPawn"],
                 shadow: true,
                 layers: ["walk"],
                 translation:[0, 0, 0],

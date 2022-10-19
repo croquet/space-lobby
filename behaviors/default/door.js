@@ -24,6 +24,8 @@ class DoorActor {
         this.updatePositionBy(0);
         //this.bars = Array();
         //this.audio = new Audio('./assets/tink.wav');
+        this.audio = new Audio("./assets/audio/mixkit-sci-fi-interface-zoom-890.wav");
+        this.doorAudio = new Audio("./assets/audio/mixkit-high-tech-robot-movement-2526.wav");
         this.dots = [];
         this.left_button = false;
         this.right_button = false;
@@ -36,7 +38,12 @@ class DoorActor {
         }
         this.removeObjects(); // Reset
         this.subscribe("global", "doorLoadComplete","setBool");
+        this.subscribe("audio","toggleAudio", this.audioToggle);
+        this.audioOn = true;
 
+    }
+    audioToggle(){
+        this.audioOn = !this.audioOn;
     }
 
     setBool(data){
@@ -77,13 +84,13 @@ class DoorActor {
             this.publish("global", "change_color", {scope: 'left', color: this.red, direction: -1});
         }else{
             this.publish("global", "change_color", {scope: 'left', color: this.green, direction: 1});
-            //this.audio.play();
+            if(this.audioOn){this.audio.play();}
         }
         if(!button2){
             this.publish("global", "change_color", {scope: 'right', color: this.red, direction: -1});
         }else{
             this.publish("global", "change_color", {scope: 'right', color: this.green, direction: 1});
-            //this.audio.play();
+            if(this.audioOn){this.audio.play();}
         }
         if (button1 && button2){
                 //this.publish("opendoor");
@@ -94,6 +101,7 @@ class DoorActor {
                 if(this.middle_line){
                     this.updatePositionBy(.01);
                     this.publish("global", "change_opac", {scope: 'middle_panel', opac: -0.01, direction: 1});
+                    if(this.audioOn){this.doorAudio.play();}
                 }
                 //console.log("pressed");
                 this.publish("global", "change_color", {scope: 'middle', color: this.green, direction: 1});
@@ -114,11 +122,13 @@ class DoorActor {
     updatePositionBy(ratio) { // Where The Movement Occurs
         this.ratio += ratio;
         this.ratio = Math.min(1, Math.max(0, this.ratio));
-        let pos = Microverse.v3_lerp(this.pointA, this.pointB, this.ratio);
+        //let pos = Microverse.v3_lerp(this.pointA, this.pointB, this.ratio);
         //console.log(pos);
-        this.set({translation: pos});//Microverse.v3_lerp(this.pointA, this.pointB, this.ratio)});
+        //this.set({translation: pos});//Microverse.v3_lerp(this.pointA, this.pointB, this.ratio)});
         //this.publish("doorLink", "handlePhysics", ratio); // Physics
         if(this.ratio == 1){
+            let pos = Microverse.v3_lerp(this.pointA, this.pointB, this.ratio);
+            this.set({translation: pos});
             this.pressed();
         }
     }
@@ -136,7 +146,7 @@ class DoorActor {
             cornerRadius: 0.05,
             depth: 0.05,
             frameColor: 8947848,
-            portalURL: "?world=smallfactory",
+            portalURL: "?world=smallfactory",//portalURL: 'https://croquet.io/test/microverse?world=smallfactory"
             type: "2d",
             width: 1.8,
             height: 2.4,
@@ -219,6 +229,7 @@ class DoorButtonPawn {
         //     this.obj = new Microverse.THREE.Mesh(geometry, material);
         //     this.shape.add(this.obj);
         // }
+        
         let sign = scope=="left"?-1:1;
         let arrLen = scope=="middle"?10:27;
         let angle = Math.PI*5/12;
