@@ -146,7 +146,7 @@ class DoorActor {
             cornerRadius: 0.05,
             depth: 0.05,
             frameColor: 8947848,
-            portalURL: "?world=smallfactory",//portalURL: 'https://croquet.io/test/microverse?world=smallfactory"
+            portalURL: "https://croquet.io/test/microverse?world=smallfactory",
             type: "2d",
             width: 1.8,
             height: 2.4,
