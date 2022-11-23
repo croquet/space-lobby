@@ -8,6 +8,9 @@ class WorldPawn  {
         this.worldLoaded = true;
         // this is dubious from object oriented stand point to assign a value into a foreign object
         avatar.worldLoaded = true;
+        if(window.birdEyeDone){
+            Microverse.sendToShell("hud", {joystick: true});
+        }
         if (avatar.avatarLoaded && this.worldLoaded) {
             this.publish(avatar.id, "startSwoopAnimation");
             //Microverse.sendToShell("hud", {joystick: false});

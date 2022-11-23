@@ -118,12 +118,16 @@ class DustPawn {
 
 }
 
+
+
 export default {
     modules: [
         {
             name: "TutorialGif",
             actorBehaviors: [DustActor],
             pawnBehaviors: [DustPawn],
-        }
+        },
+
+
     ]
 }

@@ -1,8 +1,10 @@
 class AvatarPawn {
     setup() {
+        this.subscribe(this.id, "3dModelLoaded", "modelLoaded");
         if (!this.isMyPlayerPawn) {return;}
-        //Microverse.sendToShell("hud", {joystick: false});
-        this.lookTo(-0.3, 0, [0, 0, 0]);
+        //if(!window.birdEyeDone){
+        //Microverse.sendToShell("hud", {joystick: false});}
+        //this.lookTo(-0.3, 0, [0, 0, 0]);
 
         this.addFirstResponder("pointerTap", {ctrlKey: true, altKey: true}, this);
         this.addEventListener("pointerTap", this.pointerTap);
@@ -31,16 +33,89 @@ class AvatarPawn {
         this.addLastResponder("keyUp", {ctrlKey: true}, this);
         this.addEventListener("keyUp", this.keyUp);
 
-        this.subscribe(this.id, "3dModelLoaded", "loaded");
+        //this.subscribe(this.id, "3dModelLoaded", "loaded");
+        //this.subscribe(this.id, "3dModelLoaded", "swoopLoaded");
         this.subscribe(this.id, "startSwoopAnimation", "birdeye");
 
         this.angle = 0;//270;
         this.swoopPath = "egg";
         this.r = 0;
         //this.birdeye();
+        let helmet = this.shape.children.find((c) => c.name === "helmet");
+        if (helmet){
+            this.modelLoaded();
+        }
     }
 
     loaded() {
+        this.avatarLoaded = true;
+        if (this.isMyPlayerPawn) {this.swoopLoaded();}
+        let helmet = this.shape.children.find((c) => c.name === "clearHelmet");
+        if (helmet) {helmet.removeFromParent();}
+
+        let circle = new Microverse.THREE.SphereGeometry(.6,32,32);
+        //circle.rotateX(-Math.PI / 2);
+        //let material = new Microverse.THREE.MeshStandardMaterial({color: this.actor._cardData.color || 0xFFFFFF, side: Microverse.THREE.FrontSide});//new Microverse.THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, transparent: true});
+        let material = new Microverse.THREE.MeshPhysicalMaterial({roughness: 0, metalness: 0, transmission:0.8, color: 0xFFFFFF,})
+        material.transparent = true;
+        //material.opacity = 0.2;
+        ///matertial.reflectivity = 0.5;
+        helmet = new Microverse.THREE.Mesh(circle, material);
+        this.createCard({
+            layers: ["pointer"],
+            name: "clearHelmet",
+            dataLocation: "32A2hwB1ddi7RtdJib48p18ReSbxC8yRF3BdLYGW_Q-MWkZGQkEIHR1UW15XQRxHQRxRQF1DR1dGHFtdHUcdSGdGRWJ9SHRHfWEDeVtVf2hbBwELSnR2dQoCAB1bXRxRQF1DR1dGHF9bUUBdRFdAQVccXl1RU15WV0RWV1RTR15GHR9IeHwGeFhAC0pCV3YASFVZa1QDfEJfWFZGXEUDdnpxanxLA1xFBGd7BVkdVlNGUx1XUEN1QVFZWktGX2ZZc3kGe1dVWG1jCgFUWHFjAHthZARCCwZtVUBBV1Vj",
+            dataScale: [10, 10, 10],
+            fileName: "/avatar_helmet.glb",
+            modelType: "glb",
+            shadow: true,
+            singleSided: true,
+            parent: this,
+            type: "3d",
+        });
+        helmet.position.set(0, .2, 0);
+        helmet.name = "clearHelmet";
+
+        //this.shape.add(helmet);
+    }
+
+    modelLoaded() {
+        this.avatarLoaded = true;
+        if (this.isMyPlayerPawn) {this.swoopLoaded();}
+        if (this.shape.children.length === 1) {
+            this.load();
+        }
+    }
+    load() {
+        let helmet = this.shape.children.find((c) => c.name === "helmet");
+        if (helmet) {
+            helmet.removeFromParent();
+        }
+        let dataLocation = "./assets/3D/avatar_helmet.glb";
+        this._model3dLoading = dataLocation;
+        let assetManager = this.service("AssetManager").assetManager;
+        this.getBuffer(dataLocation).then((buffer) => {
+            assetManager.setCache(dataLocation, buffer, this.id);
+            return assetManager.load(buffer, "glb", Microverse.THREE);
+        }).then((obj) => {
+            if (dataLocation !== this._model3dLoading) {
+                console.log("model load has been superseded");
+                return;
+            }
+            obj.name = "helmet";
+            obj.position.set(0, -.1, 0);
+            obj.rotation.set(-.6, Math.PI, 0);
+            obj.scale.set(0.6,0.6,0.6);
+            obj.traverse((mesh) => {
+                if (mesh.material) {
+                    mesh.material.side = Microverse.THREE.FrontSide;
+                }
+            });
+            this.shape.add(obj);
+        });
+    }
+
+    swoopLoaded(){
         this.avatarLoaded = true;
         if (this.avatarLoaded && this.worldLoaded) {
             this.publish(this.id, "startSwoopAnimation");
@@ -168,3 +243,43 @@ export default {
 }
 
 /* globals Microverse */
+/*
+class LoadPawn {
+    setup() {
+        this.subscribe(this.id, "3dModelLoaded", "modelLoaded");
+    }
+    modelLoaded() {
+        if (this.shape.children.length === 1) {
+            this.load();
+        }
+    }
+    load() {
+        let helmet = this.shape.children.find((c) => c.name === "helmet");
+        if (helmet) {
+            helmet.removeFromParent();
+        }
+        let dataLocation = "./assets/3D/Drone2.glb";
+        this._model3dLoading = dataLocation;
+        let assetManager = this.service("AssetManager").assetManager;
+        this.getBuffer(dataLocation).then((buffer) => {
+            assetManager.setCache(dataLocation, buffer, this.id);
+            return assetManager.load(buffer, "glb", Microverse.THREE);
+        }).then((obj) => {
+            if (dataLocation !== this._model3dLoading) {
+                console.log("model load has been superseded");
+                return;
+            }
+            obj.name = "helmet";
+            obj.position.set(0, 2, 0);
+            this.shape.add(obj);
+        });
+    }
+}
+export default {
+    modules: [
+        {
+            name: "GLBLoader",
+            pawnBehaviors: [LoadPawn]
+        }
+    ]
+}*/

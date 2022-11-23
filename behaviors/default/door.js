@@ -24,8 +24,7 @@ class DoorActor {
         this.updatePositionBy(0);
         //this.bars = Array();
         //this.audio = new Audio('./assets/tink.wav');
-        this.audio = new Audio("./assets/audio/mixkit-sci-fi-interface-zoom-890.wav");
-        this.doorAudio = new Audio("./assets/audio/mixkit-high-tech-robot-movement-2526.wav");
+        
         this.dots = [];
         this.left_button = false;
         this.right_button = false;
@@ -79,18 +78,23 @@ class DoorActor {
                 button2 = true;
                 
             }
+            if (Microverse.v3_magnitude(Microverse.v3_sub(a.translation, [1,1.5,-10])) < 1.4) {  //[-28, 0, 28]
+                //console.log("found2");
+                this.publish("global", "atPortal");
+                
+            }
         });
         if(!button1){
             this.publish("global", "change_color", {scope: 'left', color: this.red, direction: -1});
         }else{
             this.publish("global", "change_color", {scope: 'left', color: this.green, direction: 1});
-            if(this.audioOn){this.audio.play();}
+            if(this.audioOn){this.say("audio");}
         }
         if(!button2){
             this.publish("global", "change_color", {scope: 'right', color: this.red, direction: -1});
         }else{
             this.publish("global", "change_color", {scope: 'right', color: this.green, direction: 1});
-            if(this.audioOn){this.audio.play();}
+            if(this.audioOn){this.say("audio");}
         }
         if (button1 && button2){
                 //this.publish("opendoor");
@@ -101,7 +105,7 @@ class DoorActor {
                 if(this.middle_line){
                     this.updatePositionBy(.01);
                     this.publish("global", "change_opac", {scope: 'middle_panel', opac: -0.01, direction: 1});
-                    if(this.audioOn){this.doorAudio.play();}
+                    if(this.audioOn){this.say("doorAudio");}
                 }
                 //console.log("pressed");
                 this.publish("global", "change_color", {scope: 'middle', color: this.green, direction: 1});
@@ -136,7 +140,7 @@ class DoorActor {
     pressed() {
         if (this.hasOpened) {return;}
         this.hasOpened = true;
-
+        /*
         this.createCard({
             translation: [0, 1.5, -10],//[0, 9.1, 8],
             rotation: [0, -3.14, 0],
@@ -146,11 +150,32 @@ class DoorActor {
             cornerRadius: 0.05,
             depth: 0.05,
             frameColor: 8947848,
-            portalURL: "https://croquet.io/test/microverse?world=smallfactory",
+            portalURL: "?world=smallfactory",//portalURL: 'https://croquet.io/test/microverse?world=smallfactory"
             type: "2d",
             width: 1.8,
             height: 2.4,
-        });
+        });*/
+
+        this.createCard({
+                name: "Gallery Card",
+                behaviorModules: ["ReplaceWorld", "PortalText"],
+                replaceWorldTargetURL: "https://croquet.github.io/gallery",
+                TargetURL: "https://croquet.github.io/gallery",
+                replaceWorldPreserveOrigin: "//(.*\\.)?croquet.(io|dev)$",
+                PreserveOrigin: "//(.*\\.)?croquet.(io|dev)$",
+                translation: [-1.3, 1.3, -10],//[0, 9.1, 8],
+                rotation: [0, 0, 0],
+                layers: ["pointer"],
+                scale: [1, 1, 1],
+                type: "object",
+                text: "Click to Teleport",
+                fullBright: true,
+                frameColor: 0xcccccc,
+                color: 0xffffff,
+                cornerRadius: 0.05,
+                depth: 0.05,
+                shadow: true,
+            });
         this.say("portalChanged");
     }
 }
@@ -159,6 +184,21 @@ class DoorPawn {
     setup() {
         this.removeEventListener("pointerDoubleDown", "onPointerDoubleDown");
         this.addEventListener("pointerDoubleDown", "nop");
+        this.audio = new Audio("./assets/audio/mixkit-sci-fi-interface-zoom-890.wav");
+        this.doorAudio = new Audio("./assets/audio/mixkit-high-tech-robot-movement-2526.wav");
+        this.listen("audio", "playAudio");
+        this.listen("doorAudio", "playDoorAudio");
+    }
+
+    playAudio() {
+        //console.log("audio");
+        this.audioOn = this.actor.audioOn;
+        if(this.audioOn){this.audio.play();}
+    }
+
+    playDoorAudio() {
+        this.audioOn = this.actor.audioOn;
+        if(this.audioOn){this.doorAudio.play();}
     }
 }
 
@@ -408,7 +448,125 @@ class ButtonLightPawn {
     }
 }
 
+class ReplaceWorldPawn {
 
+    get targetURL() { return this.actor._cardData.replaceWorldTargetURL; }
+    set targetURL(url) { if (this.targetURL !== url) this.say("setCardData", { replaceWorldTargetURL: url }); }
+    get preserveOrigin() { return this.actor._cardData.replaceWorldPreserveOrigin; }
+
+    setup() {
+        this.addEventListener("pointerDown", "onPointerDown");
+        this.subscribe("global", "atPortal", "onPointerDown");
+    }
+
+    onPointerDown() {
+        document.body.style.background = "black";
+        const canvas = document.getElementById("ThreeCanvas");
+        canvas.style.transition = "opacity 1s";
+        canvas.style.opacity = 0;
+        const targetURL = this.resolveTargetURL();
+        setTimeout(() => Microverse.sendToShell("world-replace", { targetURL}), 1000);
+    }
+
+    resolveTargetURL() {
+        // if targetURL does not have a sessionName or password, we need to resolve it
+        // we do this by appending our own sessionName and password to the URL
+        debugger;
+        const our = new URL(location.href);
+        const target = new URL(this.targetURL, our.href);
+        const targetSearchParams = target.searchParams;
+        const targetHashParams = new URLSearchParams(target.hash.slice(1));
+        // if the target has a sessionName or password, we don't need to resolve it
+        let sessionName = targetSearchParams.get("q");
+        let password = targetHashParams.get("pw");
+        if (!sessionName || !password) {
+            if (!sessionName) {
+                sessionName = our.searchParams.get("q");
+                password = '';
+                targetSearchParams.set("q", sessionName);
+            }
+            if (!password) {
+                const ourHashParams = new URLSearchParams(our.hash.slice(1));
+                password = ourHashParams.get("pw");
+                targetHashParams.set("pw", password);
+                target.hash = targetHashParams.toString();
+            }
+        }
+        // copy our options to the target
+        for (const setting of [ "showSettings", "voiceChat", "broadcastMode" ]) {
+            if (our.searchParams.has(setting)) targetSearchParams.set(setting, "true");
+        }
+        // stay on the origin if we are running there
+        if (this.preserveOrigin && new RegExp(this.preserveOrigin).test(our.origin)) {
+            // use our own origin as target origin
+            target.protocol = our.protocol;
+            target.host = our.host;
+            // append target path to ours. this is designed to work both on /dev/ and /
+            const targetPath = target.pathname.split("/"); // ["", "dir", "to", "target", "x.html"]
+            targetPath.shift(); // ["dir", "to", "target", "x.html"]
+            const ourPath = our.pathname.split("/"); // ["", "dev", "myapp", "y.html"]
+            ourPath.splice(-2); // ["", "dev"]
+            ourPath.push(...targetPath); // ["", "dev", "dir", "to", "target", "x.html"]
+            target.pathname = ourPath.join("/"); // "/dev/dir/to/target/x.html"
+        }
+        // return the resolved URL
+        return target.href;
+    }
+
+}
+
+class TextPawn {
+    setup() {
+
+        //this.shape.children.forEach((c) => this.shape.remove(c));
+        //this.shape.children = [];
+        if (this.left_dots) {
+            this.left_dots.forEach((d) => d.removeFromParent());
+        }
+        this.text = this.actor._cardData.text;
+        this.material =  new Microverse.THREE.MeshStandardMaterial({emissive: this.actor._cardData.color || 0xFFFFFF, side: Microverse.THREE.DoubleSide});
+        this.material.transparent = true;
+        this.material.opacity = 0.27;
+        this.currDot = 0;
+        this.green = 0x40FF00;
+        this.red = 0xFF7300;
+        this.upTranslation = this.actor._translation; 
+        this.shape.children.forEach((c) => this.shape.remove(c));
+        const loader = new Microverse.THREE.FontLoader();
+        //let currText = this.text.substring(0,this.currDot);
+        loader.load('./assets/fonts/helvetiker_bold.typeface.json',(font) => {
+            // do something with the font
+            let geometry = new Microverse.THREE.TextGeometry(this.text, {
+                font: font,
+                size: .2,
+                height: .01,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: .01,
+                bevelSize: .005,
+                bevelOffset: 0,
+                bevelSegments: 5
+            } );
+            let dot = new Microverse.THREE.Mesh(geometry, this.material);
+            dot.position.set(0,0,0);
+            dot.rotation.set(0,0,0);
+            let geometry2 = new Microverse.THREE.CircleGeometry(2,32);
+            let dot2 = new Microverse.THREE.Mesh(geometry2, this.material);
+            dot2.position.set(1,0,0);
+            dot2.rotation.set(0,0,0);
+            this.shape.add(dot);
+            this.shape.add(dot2);
+        });
+    }
+
+    teardown() {
+        if (this.bloomPass) {
+            this.service("ThreeRenderManager").composer.removePass(this.bloomPass);
+            this.bloomPass = null;
+        }
+    }
+
+}
 
 /* Three behavior modules are exported from this file. */
 
@@ -417,7 +575,7 @@ export default {
         {
             name: "Door",
             actorBehaviors: [DoorActor],
-            pawnBehaviors: []//DoorPawn]
+            pawnBehaviors: [DoorPawn]
         },
         {
             name: "DoorButton",
@@ -428,6 +586,16 @@ export default {
             name: "ButtonLight",
             actorBehaviors: [],//ButtonLightActor],
             pawnBehaviors: [ButtonLightPawn],
+        },
+        {
+            name: "ReplaceWorld",
+            actorBehaviors: [],
+            pawnBehaviors: [ReplaceWorldPawn],
+        },
+        {
+            name: "PortalText",
+            actorBehaviors: [],
+            pawnBehaviors: [TextPawn],
         }
     ]
 }
@@ -453,4 +621,9 @@ if(standing)
   this.dots[3].material.color.set(...)
 else(
  this.dots[]
-this.future*/
+this.future
+
+
+3:55
+
+/* globals Microverse */
