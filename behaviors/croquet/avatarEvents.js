@@ -2,9 +2,6 @@ class AvatarPawn {
     setup() {
         this.subscribe(this.id, "3dModelLoaded", "modelLoaded");
         if (!this.isMyPlayerPawn) {return;}
-        //if(!window.birdEyeDone){
-        //Microverse.sendToShell("hud", {joystick: false});}
-        //this.lookTo(-0.3, 0, [0, 0, 0]);
 
         this.addFirstResponder("pointerTap", {ctrlKey: true, altKey: true}, this);
         this.addEventListener("pointerTap", this.pointerTap);
@@ -33,8 +30,6 @@ class AvatarPawn {
         this.addLastResponder("keyUp", {ctrlKey: true}, this);
         this.addEventListener("keyUp", this.keyUp);
 
-        //this.subscribe(this.id, "3dModelLoaded", "loaded");
-        //this.subscribe(this.id, "3dModelLoaded", "swoopLoaded");
         this.subscribe(this.id, "startSwoopAnimation", "birdeye");
 
         this.angle = 0;//270;
@@ -47,38 +42,6 @@ class AvatarPawn {
         }
     }
 
-    loaded() {
-        this.avatarLoaded = true;
-        if (this.isMyPlayerPawn) {this.swoopLoaded();}
-        let helmet = this.shape.children.find((c) => c.name === "clearHelmet");
-        if (helmet) {helmet.removeFromParent();}
-
-        let circle = new Microverse.THREE.SphereGeometry(.6,32,32);
-        //circle.rotateX(-Math.PI / 2);
-        //let material = new Microverse.THREE.MeshStandardMaterial({color: this.actor._cardData.color || 0xFFFFFF, side: Microverse.THREE.FrontSide});//new Microverse.THREE.MeshBasicMaterial({color: 0x000000, opacity: 0.1, transparent: true});
-        let material = new Microverse.THREE.MeshPhysicalMaterial({roughness: 0, metalness: 0, transmission:0.8, color: 0xFFFFFF,})
-        material.transparent = true;
-        //material.opacity = 0.2;
-        ///matertial.reflectivity = 0.5;
-        helmet = new Microverse.THREE.Mesh(circle, material);
-        this.createCard({
-            layers: ["pointer"],
-            name: "clearHelmet",
-            dataLocation: "32A2hwB1ddi7RtdJib48p18ReSbxC8yRF3BdLYGW_Q-MWkZGQkEIHR1UW15XQRxHQRxRQF1DR1dGHFtdHUcdSGdGRWJ9SHRHfWEDeVtVf2hbBwELSnR2dQoCAB1bXRxRQF1DR1dGHF9bUUBdRFdAQVccXl1RU15WV0RWV1RTR15GHR9IeHwGeFhAC0pCV3YASFVZa1QDfEJfWFZGXEUDdnpxanxLA1xFBGd7BVkdVlNGUx1XUEN1QVFZWktGX2ZZc3kGe1dVWG1jCgFUWHFjAHthZARCCwZtVUBBV1Vj",
-            dataScale: [10, 10, 10],
-            fileName: "/avatar_helmet.glb",
-            modelType: "glb",
-            shadow: true,
-            singleSided: true,
-            parent: this,
-            type: "3d",
-        });
-        helmet.position.set(0, .2, 0);
-        helmet.name = "clearHelmet";
-
-        //this.shape.add(helmet);
-    }
-
     modelLoaded() {
         this.avatarLoaded = true;
         if (this.isMyPlayerPawn) {this.swoopLoaded();}
@@ -86,6 +49,7 @@ class AvatarPawn {
             this.load();
         }
     }
+
     load() {
         let helmet = this.shape.children.find((c) => c.name === "helmet");
         if (helmet) {
@@ -183,23 +147,6 @@ class AvatarPawn {
         this.future(10).birdeye();
     }
 
-    orbit(){
-    }
-
-    // updateMotion(dx, dy) {
-    //     if(this.swoopPath == "return"){
-    //         return;
-    //     }
-    //     const JOYSTICK_V = 0.000030;
-    //     const MAX_V = 0.015;
-    //     const MAX_SPIN = 0.0004;
-    //     let v = dy * JOYSTICK_V;
-    //     v = Math.min(Math.max(v, -MAX_V), MAX_V);
-    //     const yaw = dx * (this.isMobile ? -2.5 * MAX_SPIN : -MAX_SPIN);
-    //     this.spin = q_euler(0, yaw ,0);
-    //     this.velocity = [0, 0, v];
-    //     this.maybeLeavePresentation();
-    // }
 
     teardown() {
         if (!this.isMyPlayerPawn) {return;}
@@ -233,53 +180,68 @@ class AvatarPawn {
     }
 }
 
+export class WalkerPawn {
+    walkTerrain(vq) {
+        let walkLayer = this.service("ThreeRenderManager").threeLayer("walk");
+        if (!walkLayer) return vq;
+
+        let collideList = walkLayer.filter(obj => obj.collider);
+        if (collideList.length === 0) {return vq;}
+        return this.collideBVH(collideList, vq);
+    }
+
+    checkPortal(vq, _time, _delta) {
+        let collided = this.collidePortal(vq);
+        return [vq, collided];
+    }
+
+    checkFall(vq, _time, _delta) {
+        if (!this.isFalling) {return [vq, false];}
+        let v = vq.v;
+        v = [v[0], v[1] - this.fallDistance, v[2]];
+        this.isFalling = false;
+        if (v[1] < this.maxFall) {
+            this.goHome();
+            return [{v: [0, 0, 0], q: [0, 0, 0, 1]}, true];
+        }
+        return [{v: v, q: vq.q}, false];
+    }
+
+    backoutFromFall(vq, _time, _delta) {
+        if (!this.checkFloor(vq)) {
+            // if the new position leads to a position where there is no walkable floor below
+            // it tries to move the avatar the opposite side of the previous good position.
+            vq.v = Microverse.v3_lerp(this.lastCollideTranslation, vq.v, -1);
+        } else {
+            this.lastCollideTranslation = vq.v;
+        }
+        return [vq, false];
+    }
+
+    bvh(vq, time, _delta) {
+        let collide_throttle = this.collide_throttle || 50;
+
+        if ((this.actor.fall || this.spectator) && time - this.lastCollideTime > collide_throttle) {
+            this.lastCollideTime = time;
+            let result = this.checkFall(vq);
+            if (result[1]) {return result;}
+            vq = this.walkTerrain(result[0]);
+        }
+        return [vq, false];
+    }
+}
+
 export default {
     modules: [
         {
             name: "AvatarEventHandler",
             pawnBehaviors: [AvatarPawn],
+        },
+        {
+            name: "BuiltinWalker",
+            pawnBehaviors: [WalkerPawn],
         }
     ]
 }
 
 /* globals Microverse */
-/*
-class LoadPawn {
-    setup() {
-        this.subscribe(this.id, "3dModelLoaded", "modelLoaded");
-    }
-    modelLoaded() {
-        if (this.shape.children.length === 1) {
-            this.load();
-        }
-    }
-    load() {
-        let helmet = this.shape.children.find((c) => c.name === "helmet");
-        if (helmet) {
-            helmet.removeFromParent();
-        }
-        let dataLocation = "./assets/3D/Drone2.glb";
-        this._model3dLoading = dataLocation;
-        let assetManager = this.service("AssetManager").assetManager;
-        this.getBuffer(dataLocation).then((buffer) => {
-            assetManager.setCache(dataLocation, buffer, this.id);
-            return assetManager.load(buffer, "glb", Microverse.THREE);
-        }).then((obj) => {
-            if (dataLocation !== this._model3dLoading) {
-                console.log("model load has been superseded");
-                return;
-            }
-            obj.name = "helmet";
-            obj.position.set(0, 2, 0);
-            this.shape.add(obj);
-        });
-    }
-}
-export default {
-    modules: [
-        {
-            name: "GLBLoader",
-            pawnBehaviors: [LoadPawn]
-        }
-    ]
-}*/

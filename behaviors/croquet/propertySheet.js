@@ -77,17 +77,20 @@ class PropertySheetActor {
         this.target = target;
         // this.menuWindow = this.newWindow({x: 1, y: 1.5}, {x: 0.9, y: 0.4});
 
-        this.cardSpecWindow = this.newWindow({x: 1.7, y: 2.8}, {x: -0.5, y: 0});
+        this.cardSpecWindow = this.newWindow({x: 1.8, y: 2.8}, {x: -0.55, y: 0});
 
         this.cardSpec = this.createCard({
             className: "TextFieldActor",
             name: 'card spec',
-            translation: [0, 0, 0.025],
+            translation: [-0.05, 0, 0.025],
             parent: this.cardSpecWindow,
             type: "text",
             margins: {left: 8, top: 8, right: 8, bottom: 8},
             textScale: 0.0014,
             backgroundColor: 0xcccccc,
+            scrollBar: true,
+            barColor: 0x888888,
+            knobColor: 0x606060,
             width: 1.7 - 0.04,
             height: 2.8 - 0.04,
             depth: 0.002,
@@ -314,16 +317,47 @@ class PropertySheetPawn {
 
         this.scrollAreaPawn = [...this.children].find((c) => {
             return c.actor._behaviorModules && c.actor._behaviorModules.indexOf("ScrollArea") >= 0;
-        })
+        });
+
+        this.addEventListener("pointerDown", "pointerDown");
+        this.addEventListener("pointerUp", "pointerUp");
     }
 
-    translated(data) {
+    translated(_data) {
         this.scrollAreaPawn.say("updateDisplay");
     }
 
+    moveMyself(evt) {
+        if (!evt.ray) {return;}
+
+        let {THREE, v3_add, v3_sub} = Microverse;
+
+        let origin = new THREE.Vector3(...evt.ray.origin);
+        let direction = new THREE.Vector3(...evt.ray.direction);
+        let ray = new THREE.Ray(origin, direction);
+
+        let dragPoint = ray.intersectPlane(
+            this._dragPlane,
+            new Microverse.THREE.Vector3()
+        );
+
+        let down = this.downInfo.downPosition;
+        let drag = dragPoint.toArray();
+
+        let diff = v3_sub(drag, down);
+        let newPos = v3_add(this.downInfo.translation, diff);
+
+        this.set({translation: newPos});
+    }
+
     pointerMove(evt) {
-        if (!evt.xyz) {return;}
         if (!this.downInfo) {return;}
+
+        if (!this.downInfo.child) {
+            return this.moveMyself(evt);
+        }
+
+        if (!evt.xyz) {return;}
         let vec = new Microverse.THREE.Vector3(...evt.xyz);
         let pInv = this.renderObject.matrixWorld.clone().invert();
         vec = vec.applyMatrix4(pInv);
@@ -336,6 +370,34 @@ class PropertySheetPawn {
 
         this.downInfo.child.translateTo([origTranslation[0] + deltaX, origTranslation[1] + deltaY, origTranslation[2]]);
         // console.log(this.downInfo, pVec2);
+    }
+
+    pointerDown(evt) {
+        if (!evt.xyz) {return;}
+        let {THREE, q_yaw, v3_rotateY} = Microverse;
+
+        let avatar = this.getMyAvatar();
+        let yaw = q_yaw(avatar.rotation);
+        let normal = v3_rotateY([0, 0, -1], yaw);
+
+        this._dragPlane = new THREE.Plane();
+        this._dragPlane.setFromNormalAndCoplanarPoint(
+            new THREE.Vector3(...normal),
+            new THREE.Vector3(...evt.xyz)
+        );
+
+        this.downInfo = {translation: this.translation, downPosition: evt.xyz};
+        if (avatar) {
+            avatar.addFirstResponder("pointerMove", {}, this);
+        }
+    }
+
+    pointerUp(_evt) {
+        this._dragPlane = null;
+        let avatar = this.getMyAvatar();
+        if (avatar) {
+            avatar.removeFirstResponder("pointerMove", {}, this);
+        }
     }
 }
 
@@ -533,6 +595,7 @@ class PropertySheetEditActor {
             depth: 0.05,
             fullBright: true,
             frameColor: 0x888888,
+            scrollBar: true,
         });
     }
 }
@@ -624,6 +687,8 @@ class BehaviorMenuActor {
             this.menu.destroy();
         }
 
+        let editIconLocation = "3rAfsLpz7uSBKuKxcjHvejhWp9mTBWh8hsqN7UnsOjJoGgYGAgFIXV0UGx4XAVwHAVwRAB0DBxcGXBsdXQddNRYkEAseOwEzGSMRMCoWQTUKEwQLBSc5JSsrQF0bHVwRAB0DBxcGXB8bEQAdBBcAARddKwMGHktLKksKNjocPyIiFBMfJRkzIyRKND4zIAZGRUVGCjECAEEFHRM6N10WEwYTXTUnEQYFHTsXOUQaAxUVFgVERR4kNxY8A0QiBAsQX0dDHTslBipENh83HQU";
+
         this.menu = this.createCard({
             name: 'behavior menu',
             behaviorModules: ["Menu"],
@@ -633,7 +698,7 @@ class BehaviorMenuActor {
             noSave: true,
             depth: 0.01,
             cornerRadius: 0.05,
-            menuIcons: {"_": 'edit.svg', "apply": null, "------------": null},
+            menuIcons: {"_": editIconLocation, "apply": null, "------------": null},
         });
 
         this.subscribe(this.menu.id, "itemsUpdated", "itemsUpdated");

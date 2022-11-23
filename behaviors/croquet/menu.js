@@ -80,7 +80,7 @@ class MenuActor {
                     parent: this,
                     type: "2d",
                     behaviorModules: ["PropertySheetEdit"],
-                    dataLocation: "./assets/SVG/edit.svg",
+                    dataLocation: icon,
                     width: 0.1,
                     height: 0.1,
                     scale: [0.04, 0.04, 0.04],
@@ -210,7 +210,7 @@ class MenuPawn {
         ];
     }
 
-    computeClippingPlanes(ary) {
+    menuComputeClippingPlanes(ary) {
         //let [top, bottom, right, left] = ary; this is the order
         let planes = [];
         if (Number.isNaN(this.shape.matrixWorld.elements[0])) return [];
