@@ -9,7 +9,7 @@ export function init(Constants) {
 
     Constants.UserBehaviorDirectory = "behaviors/default";
     Constants.UserBehaviorModules = [
-        "lights.js", "audio.js", "simpleSpin.js","door.js", "bloompass.js","tutorial.js", "glowingText.js", "worldRevolve.js"//"buttonLight.js", //,"openPortal.js"
+        "lights.js", "audio.js", "simpleSpin.js","door.js", "bloompass.js","dust.js", "glowingText.js", "worldRevolve.js"//"buttonLight.js", //,"openPortal.js"
     ];
     Constants.UseRapier = true;
 
