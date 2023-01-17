@@ -3,10 +3,18 @@
 */
 
 class DoorActor {
-    setup() { // Start With Logic, Continue With Physics Implementation
+    /*
+        This module is used for the control of gate and works similar to an and gate
+        two buttons are placed on the floor. when an avatar stands on the button, the button
+        will eluminate and begin to send a signal.
+
+        if both buttons are pressed, the signal will reach the gate and the gat will slowly dissapear.
+    */
+
+    setup() { 
         this.ratio = 0;
         this.pointA = [0,0,0];
-        this.pointB = [0,4,0];
+        this.pointB = [0,4,0]; // postion of 'removed' gate.
         if (this.ratio === undefined) this.ratio = 0.2;
         this.updatePositionBy(0);
         //this.bars = Array();
@@ -16,7 +24,7 @@ class DoorActor {
         this.left_button = false;
         this.right_button = false;
         this.middle_line =false;
-        this.green = 0x40FF00;
+        this.green = 0x40FF00; //colors used to undicate if button is pressed visually
         this.red = 0xFF3020;
         if (!this.checking) {
             this.checking = true;
@@ -24,7 +32,7 @@ class DoorActor {
         }
         this.removeObjects(); // Reset
         this.subscribe("global", "doorLoadComplete","setBool");
-        this.subscribe("audio","toggleAudio", this.audioToggle);
+        this.subscribe("audio","toggleAudio", this.audioToggle); //allows for acoustic feedback
         this.audioOn = true;
 
     }
@@ -52,6 +60,7 @@ class DoorActor {
         let avatars = actors.filter((a) => a.playerId);
         let button1 = false;
         let button2 = false;
+        //check locations of all avatars to see if they are on the button
         avatars.forEach((a) => {
             if (Microverse.v3_magnitude(Microverse.v3_sub(a.translation,[-2,2,2.1] )) < 1.4) {
                 button1 = true;
@@ -66,6 +75,8 @@ class DoorActor {
                 
             }
         });
+        // if button is pressed slowly change color of dots on the floor to show movent of signal
+        // if the button is not pressed, then return the color backwards till all dots are red
         if(!button1){
             this.publish("global", "change_color", {scope: 'left', color: this.red, direction: -1});
         }else{
@@ -78,6 +89,7 @@ class DoorActor {
             this.publish("global", "change_color", {scope: 'right', color: this.green, direction: 1});
             if(this.audioOn){this.say("audio");}
         }
+        // if both buttons are pressed and the signal has reached the door, fade the door
         if (button1 && button2){
             if(this.left_button&&this.right_button){
                 if(this.middle_line){
@@ -184,9 +196,11 @@ class DoorButtonActor { // Buttons Move Door
 }
 
 class DoorButtonPawn {
+    /*
+        controls the color changing code for the floor dots
+    */
     setup() {
-        //this.shape.children.forEach((c) => this.shape.remove(c));
-        //this.shape.children = [];
+        
         if (this.dots) {
             this.dots.forEach((d) => d.removeFromParent());
         }
@@ -214,7 +228,7 @@ class DoorButtonPawn {
             return dot;
         });
 
-        this.currDot = 0;
+        this.currDot = 0;  // current position of 'signal' i.e the last dot that has been changed to green
 
         this.addEventListener("pointerDown", "start");
         this.addEventListener("pointerUp", "stop");
@@ -247,6 +261,7 @@ class DoorButtonPawn {
         this.currDot += direction;
         this.currDot = Math.max(0, Math.min(this.currDot, this.dots.length - 1));
         let scope = this.actor._cardData.myScope;
+        // for left button and dots
         if(scope=="left"){
         //console.log(this.currDot, direction);
             if(this.currDot>28){
@@ -261,6 +276,7 @@ class DoorButtonPawn {
                 this.publish("global", "doorLoadComplete", {scope:"left", isComp:false});
             }
         }
+        //for right button and dots
         if(scope=="right"){
             //console.log(this.currDot, direction);
             if(this.currDot>28){
