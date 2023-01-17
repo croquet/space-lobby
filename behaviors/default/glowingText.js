@@ -24,7 +24,6 @@ class TextActor {
                 fullBright: false,
                 shadow: true,
                 singleSided: true,
-                //textureLocation: "3dbVMCMeVHmQoRX1BH8uxp6cCh6izEk_v5CbIrHYOLdIDBAQFBdeS0sCDQgBF0oRF0oHFgsVEQEQSg0LSxFLHjEQEzQrHiIRKzdVLw0DKT4NUVddHCIgI1xUVksNC0oHFgsVEQEQSgkNBxYLEgEWFwFKCAsHBQgAARIAAQIFEQgQSwo1JSMUBiAsKAIUVihJFTEuD1wWKTUFVAohHAlRFjsjAgwOMC8AJi8JPDFLAAUQBUtQIg5dHBU9NChSCjwGKVYMDRMuCyMXMB0vEhxWDz4RVRwLMgMAIgFSPhAX",
                 textureType: "canvas",
                 textureHeight: 280,
                 textureWidth: 280,
@@ -63,9 +62,6 @@ class TextActor {
 
 class TextPawn {
     setup() {
-
-        //this.shape.children.forEach((c) => this.shape.remove(c));
-        //this.shape.children = [];
         if (this.left_dots) {
             this.left_dots.forEach((d) => d.removeFromParent());
         }
